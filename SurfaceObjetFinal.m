@@ -7,9 +7,11 @@
 %%%% plan_couleur : choice for selecting the image colour most appropriate to detect the larvae
 %%%% format_video : image format selected on camera (pixel distorsion)
 %%%% angle_recadrage : rotation angle to be applied to image when displaying it for scale definition
+%%%% inversion_BW : 0 if object are lighter than background / 1 if object are darker than background
 %%%% surface_min_larve : minimum surface area in mm2 used to threshold larval projected surface area 
 %%%% taille_max_larvae : radius in pixel of the morphing function used to average background (should be bigger than the size of the object the routine should detect)
 %%%% taille_min_larvae : minimum number of pixels used to threshold any detected object after binarization
+%%%% gray_level : upper value of the range to amplify
 %%%% connectivite : connectivity value required in selected object after binarization. It may have the following scalar values:  
 %%        4     two-dimensional four-connected neighborhood
 %%        8     two-dimensional eight-connected neighborhood
@@ -17,7 +19,7 @@
 %%%% scale_size : length of the scale on the picture in the length unit you chose 
 %%%% surface : projected surface area of all larvae detected on the picture scaled in the square of length unit selected above
 
-function [surface]=SurfaceObjet(nom_fic,chemin,plan_couleur,format_video,angle_recadrage,surface_min_larve,taille_max_larve,taille_min_larve,connectivite,scale_orient, scale_size)
+function [surface]=SurfaceObjetFinal(nom_fic,chemin,plan_couleur,format_video,angle_recadrage,inversion_BW,surface_min_larve,taille_max_larve,taille_min_larve,gray_level,connectivite,scale_orient, scale_size)
 
 %plan_couleur = 1
 %format_video=4/3;
@@ -76,7 +78,11 @@ ury = ceil(Coord(2,2)); %ymax
 %%%%%%%% ATTENTION : les objets recherches doivent etre blancs %%%%%%%%%%%%%%
 image_recadre = imcrop (I(:,:,plan_couleur),[llx,lly,urx-llx,ury-lly]);
 
+if(inversion_BW==1)
 image_recadreng  = double(255-image_recadre)/255.0;
+elseif (inversion_BW==0)
+image_recadreng  = double(image_recadre)/255.0;
+end 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Appliquer un fond uniforme%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -90,7 +96,7 @@ I2 = image_recadreng - background;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Augmenter le contraste%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-I2 = imadjust(I2,[0 0.3],[0 1],3);
+I2 = imadjust(I2,[0 gray_level],[0 1],3);
 imshow(I2);
 
 
