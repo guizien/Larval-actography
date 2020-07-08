@@ -25,14 +25,14 @@ function [surface]=SurfaceObjetFinal(nom_fic,chemin,plan_couleur,format_video,an
 %format_video=4/3;
 %angle_recadrage=0;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%lire l'image%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% upload the graphics file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 I=imread([chemin,nom_fic]);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Definir l'echelle%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%Afficher l'image sur un axe
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% define the scale %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% display image
 image(I); axis image
-%%Definir l'echelle
+%% define scale on picture
 id_orientation = scale_orient;
 sprintf('Define scale with the mouse (click each extremity of the scale once) : ');
 dimension_cuve = ginput(2);
@@ -49,25 +49,25 @@ ratio=nx/ny*format_video;
 end
 
 if (id_orientation==1)
-%%% echelle sur l horizontale length/pix
+%%% horizontal scale length/pix
 echelle_x = (scale_size/dx)
-%%% echelle sur la verticale length/pix
+%%% vertical scale length/pix
 echelle_y = (scale_size/dx)*ratio
 elseif (id_orientation==2)
- %%% echelle sur l horizontale cm/pix
+%%% horizontal scale cm/pix
 echelle_x = (scale_size/dy)/ratio
-%%% echelle sur la verticale cm/pix
+%%% vertical scale cm/pix
 echelle_y = (scale_size/dy)
 end
 
-sprintf('Echelle horizontale(mm/px):%30s',echelle_x);
-sprintf('Echelle verticale(mm/px):%30s',echelle_y);
+sprintf('Horizontal scale (mm/px):%30s',echelle_x);
+sprintf('Vertical scale (mm/px):%30s',echelle_y);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Recadrer l'image%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 image(I); axis image
-sprintf('Definissez les coins bas-gauche et haut-droit de la zone ou se trouvent les objets : ');
+sprintf('Define upper right and lower left corner to be processed (where objects are!) : ');
 Coord = ginput(2);
 llx = floor(Coord(1,1)); %xmin
 lly = floor(Coord(1,2)); %ymin
@@ -75,7 +75,7 @@ urx = ceil(Coord(2,1)); %xmax
 ury = ceil(Coord(2,2)); %ymax
 
 
-%%%%%%%% ATTENTION : les objets recherches doivent etre blancs %%%%%%%%%%%%%%
+%%%%%%%% ATTENTION : seeked objects should be white %%%%%%%%%%%%%%
 image_recadre = imcrop (I(:,:,plan_couleur),[llx,lly,urx-llx,ury-lly]);
 
 if(inversion_BW==1)
@@ -84,37 +84,35 @@ elseif (inversion_BW==0)
 image_recadreng  = double(image_recadre)/255.0;
 end 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Appliquer un fond uniforme%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% compute the background %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 background = imopen(image_recadreng,strel('disk',taille_max_larve));
 imshow(background);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Enlever fond de l'image originale%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% remove background from original image %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 I2 = image_recadreng - background;
 %imshow(I2);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Augmenter le contraste%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% increase contrast %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 I2 = imadjust(I2,[0 gray_level],[0 1],3);
 imshow(I2);
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Mettre en niveau de gris%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% on fixe la limite blanc/noir arbitrairement pour detecter les larves tres claires
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% apply gray treshold to binarize image %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% threshold is an entry parameter defined to detect light grey larvae 
 level = graythresh(I2);
 I3 = im2bw(I2,level);
 I4 = bwareaopen(I3,taille_min_larve,connectivite);
 imshow(I4);
                                                               
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Identifier les objets%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% identify objects %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [label,num] = bwlabel(I4,connectivite);
 rgb2 = label2rgb(bwlabel(label,connectivite), 'spring', 'c', 'shuffle');
 %imshow(rgb2)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% elimination des petits objets %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% remove small artefactual objects or truncated larvae %%%%%%%%%%%%%%%%%%%%%%%%%%%
 s = regionprops(label, 'area');
 inter = cat(1, s.Area);
 [c]=find(inter>surface_min_larve);
